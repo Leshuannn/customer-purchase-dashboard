@@ -4,6 +4,8 @@ import zipfile
 import altair as alt
 import matplotlib.pyplot as plt
 import datetime
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 # Extract & Load Data
 @st.cache_data
@@ -57,42 +59,21 @@ st.write(f"✅ Showing data for {len(filtered_df)} transactions from {start_date
 
 # KPI Metrics
 st.subheader("📊 Key Performance Indicators (KPIs)")
-
 total_revenue = (filtered_df["Quantity"] * filtered_df["UnitPrice"]).sum()
 total_sales = filtered_df["Quantity"].sum()
 total_customers = filtered_df["CustomerID"].nunique()
-
 col1, col2, col3 = st.columns(3)
 col1.metric("💰 Total Revenue", f"${total_revenue:,.2f}")
 col2.metric("📦 Total Sales", f"{total_sales:,}")
 col3.metric("👥 Unique Customers", f"{total_customers}")
 
-# Top Selling Products (Interactive Bar Chart)
-st.subheader("🏆 Top 10 Best-Selling Products")
-top_products = filtered_df.groupby("Description")["Quantity"].sum().sort_values(ascending=False).head(10)
-chart = (
-    alt.Chart(top_products.reset_index())
-    .mark_bar()
-    .encode(
-        x=alt.X("Quantity:Q", title="Total Quantity Sold"),
-        y=alt.Y("Description:N", title="Product", sort="-x"),
-        tooltip=["Description", "Quantity"],
-    )
-    .interactive()
-)
-st.altair_chart(chart, use_container_width=True)
+# Revenue Analysis
+st.subheader("💰 Revenue Breakdown by Country & Product")
+revenue_by_country = filtered_df.groupby("Country")["UnitPrice"].sum().sort_values(ascending=False).head(10)
+st.bar_chart(revenue_by_country)
 
-# Monthly Sales Trend (Interactive Line Chart)
-st.subheader("📈 Monthly Sales Trend")
-monthly_sales = df.groupby("YearMonth")["Quantity"].sum()
-fig, ax = plt.subplots()
-monthly_sales.plot(marker="o", ax=ax, color="darkorange")
-ax.set_ylabel("Total Quantity Sold")
-st.pyplot(fig)
+# Download Data
+st.subheader("📥 Download Filtered Data")
+csv = filtered_df.to_csv(index=False).encode("utf-8")
+st.download_button(label="Download CSV", data=csv, file_name="filtered_data.csv", mime="text/csv")
 
-# Top Countries by Sales
-st.subheader("🌍 Top 10 Countries by Sales")
-top_countries = df.groupby("Country")["Quantity"].sum().sort_values(ascending=False).head(10)
-st.table(top_countries)
-
-st.write("📌 **Insights:** This dashboard provides an interactive way to analyze purchase trends, identify top products, and track revenue.")
