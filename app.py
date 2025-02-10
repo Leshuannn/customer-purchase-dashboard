@@ -1,6 +1,7 @@
 import zipfile
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
 
 # Extract data.zip and load data.csv
 @st.cache_data
