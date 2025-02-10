@@ -1,12 +1,15 @@
-import streamlit as st
+import zipfile
 import pandas as pd
-import matplotlib.pyplot as plt
+import streamlit as st
 
-# Load dataset
+# Extract data.zip and load data.csv
 @st.cache_data
 def load_data():
-    file_path = "data.csv"  # Ensure this file is in the same folder as `app.py`
-    df = pd.read_csv(file_path, encoding="ISO-8859-1")
+    with zipfile.ZipFile("data.zip", "r") as zip_ref:
+        zip_ref.extractall()  # Extracts data.csv
+
+    # Load extracted CSV
+    df = pd.read_csv("data.csv", encoding="ISO-8859-1")
     df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"], errors="coerce")
     df = df.dropna(subset=["CustomerID"])
     df = df[(df["Quantity"] > 0) & (df["UnitPrice"] > 0)]
@@ -17,6 +20,9 @@ df = load_data()
 
 # Streamlit App Title
 st.title("📊 Customer Purchase Behavior Dashboard")
+
+# Display message to confirm successful data loading
+st.write("✅ **Data Loaded Successfully!**")
 
 # Sidebar Filters
 st.sidebar.header("🔍 Filter Data")
