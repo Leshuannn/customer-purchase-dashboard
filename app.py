@@ -72,8 +72,66 @@ st.subheader("💰 Revenue Breakdown by Country & Product")
 revenue_by_country = filtered_df.groupby("Country")["UnitPrice"].sum().sort_values(ascending=False).head(10)
 st.bar_chart(revenue_by_country)
 
+# Profit Margin Analysis
+st.subheader("💰 Profit Margin Analysis")
+df["CostPrice"] = df["UnitPrice"] * 0.6  # Assume cost is 60% of selling price
+df["ProfitMargin"] = df["UnitPrice"] - df["CostPrice"]
+profit_by_product = df.groupby("Description")["ProfitMargin"].mean().sort_values(ascending=False).head(10)
+st.bar_chart(profit_by_product)
+
+# Customer Segmentation (RFM Analysis)
+st.subheader("👥 Customer Segmentation (RFM Analysis)")
+rfm = df.groupby("CustomerID").agg({
+    "InvoiceDate": lambda x: (df["InvoiceDate"].max() - x.max()).days,  # Recency
+    "InvoiceNo": "count",  # Frequency
+    "UnitPrice": "sum"  # Monetary Value
+}).rename(columns={"InvoiceDate": "Recency", "InvoiceNo": "Frequency", "UnitPrice": "Monetary"})
+st.write(rfm.sort_values(by="Monetary", ascending=False).head(10))
+
+# Top Selling Products (Interactive Bar Chart)
+st.subheader("🏆 Top 10 Best-Selling Products")
+top_products = filtered_df.groupby("Description")["Quantity"].sum().sort_values(ascending=False).head(10)
+chart = (
+    alt.Chart(top_products.reset_index())
+    .mark_bar()
+    .encode(
+        x=alt.X("Quantity:Q", title="Total Quantity Sold"),
+        y=alt.Y("Description:N", title="Product", sort="-x"),
+        tooltip=["Description", "Quantity"],
+    )
+    .interactive()
+)
+st.altair_chart(chart, use_container_width=True)
+
+# Monthly Sales Trend (Interactive Line Chart)
+st.subheader("📈 Monthly Sales Trend")
+monthly_sales = df.groupby("YearMonth")["Quantity"].sum()
+fig, ax = plt.subplots()
+monthly_sales.plot(marker="o", ax=ax, color="darkorange")
+ax.set_ylabel("Total Quantity Sold")
+st.pyplot(fig)
+
+# Top Countries by Sales
+st.subheader("🌍 Top 10 Countries by Sales")
+top_countries = df.groupby("Country")["Quantity"].sum().sort_values(ascending=False).head(10)
+st.table(top_countries)
+
+# Sales Forecasting
+st.subheader("📊 Predict Future Sales")
+df_sales = df.groupby("YearMonth")["Quantity"].sum().reset_index()
+df_sales["YearMonth"] = df_sales["YearMonth"].astype(str).str.replace("-", "").astype(int)
+X = df_sales["YearMonth"].values.reshape(-1, 1)
+y = df_sales["Quantity"].values
+model = LinearRegression()
+model.fit(X, y)
+future_months = np.array([df_sales["YearMonth"].max() + i for i in range(1, 7)]).reshape(-1, 1)
+predicted_sales = model.predict(future_months)
+forecast_df = pd.DataFrame({"YearMonth": future_months.flatten(), "PredictedSales": predicted_sales})
+st.line_chart(forecast_df.set_index("YearMonth"))
+
 # Download Data
 st.subheader("📥 Download Filtered Data")
 csv = filtered_df.to_csv(index=False).encode("utf-8")
 st.download_button(label="Download CSV", data=csv, file_name="filtered_data.csv", mime="text/csv")
 
+st.write("📌 **Insights:** This dashboard provides an interactive way to analyze purchase trends, identify top products, track revenue, and predict future sales.")
