@@ -70,18 +70,23 @@ col3.metric("👥 Unique Customers", f"{total_customers}")
 # 💰 Fix Revenue Breakdown by Country & Product
 st.subheader("💰 Revenue Breakdown by Country & Product")
 
-# Group by Country and Sum Revenue
+# Calculate Total Revenue (Quantity * UnitPrice)
 revenue_by_country = (
-    filtered_df.groupby("Country")["Quantity"].sum()
+    filtered_df.groupby("Country").apply(lambda x: (x["Quantity"] * x["UnitPrice"]).sum())
     .reset_index()
-    .sort_values(by="Quantity", ascending=False)
+    .rename(columns={0: "Total Revenue"})
+    .sort_values(by="Total Revenue", ascending=False)
 )
 
-# Fix Chart to Show Multiple Countries
+# Debugging Step: Show Data Table to Verify Revenue Calculation
+st.write("🔍 **Debugging: Revenue Data Check**")
+st.dataframe(revenue_by_country)
+
+# Fix Chart to Show Revenue for Multiple Countries
 fig, ax = plt.subplots(figsize=(8, 5))
-ax.bar(revenue_by_country["Country"], revenue_by_country["Quantity"], color="lightblue")
+ax.bar(revenue_by_country["Country"], revenue_by_country["Total Revenue"], color="lightblue")
 ax.set_title("Total Revenue by Country")
-ax.set_ylabel("Total Quantity Sold")
+ax.set_ylabel("Revenue ($)")
 ax.set_xlabel("Country")
 ax.set_xticklabels(revenue_by_country["Country"], rotation=45)
 
