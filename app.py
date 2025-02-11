@@ -116,8 +116,11 @@ st.subheader("🌍 Top 10 Countries by Sales")
 top_countries = df.groupby("Country")["Quantity"].sum().sort_values(ascending=False).head(10)
 st.table(top_countries)
 
-# Sales Forecasting - Improved Version
-st.subheader("📊 Predict Future Sales (Next 6 Months)")
+# Sales Forecasting - Long-Term Prediction
+st.subheader("📊 Predict Future Sales")
+
+# User Input: Select Forecast Length
+n_months = st.slider("Select months to predict:", min_value=6, max_value=36, value=12, step=3)
 
 # Prepare Data for Forecasting
 df_sales = df.groupby(df["InvoiceDate"].dt.to_period("M"))["Quantity"].sum().reset_index()
@@ -129,8 +132,8 @@ y = df_sales["Quantity"].values
 model = LinearRegression()
 model.fit(X, y)
 
-# Predict Next 6 Months
-future_months = np.array([df_sales["InvoiceDate"].max() + i for i in range(1, 7)]).reshape(-1, 1)
+# Predict Future Months
+future_months = np.array([df_sales["InvoiceDate"].max() + i for i in range(1, n_months + 1)]).reshape(-1, 1)
 predicted_sales = model.predict(future_months)
 
 # Combine Past Data & Predictions
@@ -142,13 +145,14 @@ fig, ax = plt.subplots(figsize=(10, 5))
 ax.plot(forecast_df["InvoiceDate"], forecast_df["Sales"], marker="o", label="Actual Sales", color="blue")
 ax.plot(forecast_future["InvoiceDate"], forecast_future["Sales"], marker="o", linestyle="dashed", label="Predicted Sales", color="red")
 
-ax.set_title("Sales Forecast (Historical vs Prediction)")
+ax.set_title(f"Sales Forecast (Next {n_months} Months)")
 ax.set_xlabel("YearMonth")
 ax.set_ylabel("Total Sales")
 ax.legend()
 ax.grid(True)
 
 st.pyplot(fig)
+
 
 # Download Data
 st.subheader("📥 Download Filtered Data")
