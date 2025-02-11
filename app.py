@@ -67,10 +67,26 @@ col1.metric("💰 Total Revenue", f"${total_revenue:,.2f}")
 col2.metric("📦 Total Sales", f"{total_sales:,}")
 col3.metric("👥 Unique Customers", f"{total_customers}")
 
-# Revenue Analysis
+# 💰 Fix Revenue Breakdown by Country & Product
 st.subheader("💰 Revenue Breakdown by Country & Product")
-revenue_by_country = filtered_df.groupby("Country")["UnitPrice"].sum().sort_values(ascending=False).head(10)
-st.bar_chart(revenue_by_country)
+
+# Group by Country and Sum Revenue
+revenue_by_country = (
+    filtered_df.groupby("Country")["Quantity"].sum()
+    .reset_index()
+    .sort_values(by="Quantity", ascending=False)
+)
+
+# Fix Chart to Show Multiple Countries
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.bar(revenue_by_country["Country"], revenue_by_country["Quantity"], color="lightblue")
+ax.set_title("Total Revenue by Country")
+ax.set_ylabel("Total Quantity Sold")
+ax.set_xlabel("Country")
+ax.set_xticklabels(revenue_by_country["Country"], rotation=45)
+
+st.pyplot(fig)
+
 
 # Profit Margin Analysis
 st.subheader("💰 Profit Margin Analysis")
