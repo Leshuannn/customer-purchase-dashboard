@@ -116,18 +116,39 @@ st.subheader("🌍 Top 10 Countries by Sales")
 top_countries = df.groupby("Country")["Quantity"].sum().sort_values(ascending=False).head(10)
 st.table(top_countries)
 
-# Sales Forecasting
-st.subheader("📊 Predict Future Sales")
-df_sales = df.groupby("YearMonth")["Quantity"].sum().reset_index()
-df_sales["YearMonth"] = df_sales["YearMonth"].astype(str).str.replace("-", "").astype(int)
-X = df_sales["YearMonth"].values.reshape(-1, 1)
+# Sales Forecasting - Improved Version
+st.subheader("📊 Predict Future Sales (Next 6 Months)")
+
+# Prepare Data for Forecasting
+df_sales = df.groupby(df["InvoiceDate"].dt.to_period("M"))["Quantity"].sum().reset_index()
+df_sales["InvoiceDate"] = df_sales["InvoiceDate"].astype(str).str.replace("-", "").astype(int)
+
+# Train Model
+X = df_sales["InvoiceDate"].values.reshape(-1, 1)
 y = df_sales["Quantity"].values
 model = LinearRegression()
 model.fit(X, y)
-future_months = np.array([df_sales["YearMonth"].max() + i for i in range(1, 7)]).reshape(-1, 1)
+
+# Predict Next 6 Months
+future_months = np.array([df_sales["InvoiceDate"].max() + i for i in range(1, 7)]).reshape(-1, 1)
 predicted_sales = model.predict(future_months)
-forecast_df = pd.DataFrame({"YearMonth": future_months.flatten(), "PredictedSales": predicted_sales})
-st.line_chart(forecast_df.set_index("YearMonth"))
+
+# Combine Past Data & Predictions
+forecast_df = pd.DataFrame({"InvoiceDate": df_sales["InvoiceDate"], "Sales": df_sales["Quantity"]})
+forecast_future = pd.DataFrame({"InvoiceDate": future_months.flatten(), "Sales": predicted_sales})
+
+# Plot Both Historical & Predicted Data
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(forecast_df["InvoiceDate"], forecast_df["Sales"], marker="o", label="Actual Sales", color="blue")
+ax.plot(forecast_future["InvoiceDate"], forecast_future["Sales"], marker="o", linestyle="dashed", label="Predicted Sales", color="red")
+
+ax.set_title("Sales Forecast (Historical vs Prediction)")
+ax.set_xlabel("YearMonth")
+ax.set_ylabel("Total Sales")
+ax.legend()
+ax.grid(True)
+
+st.pyplot(fig)
 
 # Download Data
 st.subheader("📥 Download Filtered Data")
